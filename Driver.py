@@ -1,5 +1,6 @@
 from math import sqrt
 import sys, pygame
+from time import sleep
 import random
 from pygame.locals import*
 
@@ -36,20 +37,21 @@ def sort_points(x):
             sorted_x.append(x[i])
     return sorted_x
 
-def render(lines, points):
+def render(hull, points, x_k):
     screen=pygame.display.set_mode((width,height))
     screen.fill(screen_color)
     
     for i in points:
         pygame.draw.circle(screen, dots_color, i, 1)
     
-    pygame.draw.circle(screen, c_color, points[-1], calc_dist(points[-1], points[0]))
+    #pygame.draw.circle(screen, c_color, points[-1], calc_dist(points[-1], points[0]))
     pygame.draw.circle(screen, dot_color, points[0], 2)
     pygame.draw.circle(screen, dot_color, points[1], 2)
-    pygame.draw.circle(screen, dot_color, points[2], 2)
+    pygame.draw.circle(screen, dot_color, x_k, 2)
 
-    for line in lines:
-        pygame.draw.lines(screen, dot_color, line.p1, line.p2)
+    for tri in hull:
+        for line in tri:
+            pygame.draw.lines(screen, dot_color, line, line)
 
     pygame.display.flip()
     
@@ -57,6 +59,8 @@ def render(lines, points):
         for events in pygame.event.get():
             if events.type == QUIT:
                 sys.exit(0)
+            sleep(5)
+            main()
 
 def calc_circum_circle_centre(a, b, c):
     try:
@@ -73,21 +77,30 @@ def calc_circum_circle_centre(a, b, c):
 
         return (r_x, r_y)
     except:
-        print([a, b, c])
+        pass
 
 def main():
     lines = []
-    x = rand_points(500)
+    x = rand_points(25)
     x = sort_points(x)
-    x_0 = x[0]
-    x_j = x[1]
+    x_0 = x[0] #just always the first point
+    x_j = x[1] #conversly always the 2nd point
     x_k = x[2]
     for i in x[2:]:
-        if calc_dist(calc_circum_circle_centre(x_0, x_j, i), x_0) < calc_dist(calc_circum_circle_centre(x_0, x_j, x_k), x_0):
-            x_k = i
+        try:
+            if calc_dist(calc_circum_circle_centre(x_0, x_j, i), x_0) < calc_dist(calc_circum_circle_centre(x_0, x_j, x_k), x_0):
+                x_k = i
+        except:
+            pass
     c = calc_circum_circle_centre(x_0, x_j, x_k)
-    x.append(c)
+    #x.append(c)
+
+    hull = [ [ (x_0, x_j), (x_j, x_k), (x_k, x_0)] ]
+
+
+
+
     
-    
-    render(lines, x)
+    render(hull, x, x_k)
+
 main()
