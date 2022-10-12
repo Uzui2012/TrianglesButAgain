@@ -20,14 +20,56 @@ class Point:
     def __str__(self) -> str:
         return f"x: {self.x}   y: {self.y}"
 
-class Triangle:
-    def __init__(self, p1, p2, p3):
+    def __getitem__(self):
+        return self.x, self.y
+
+class Line:
+    def __init__(self, p1, p2):
         self.p1 = p1
         self.p2 = p2
-        self.p3 = p3
+    def __str__(self) -> str:
+        return f"p1: {self.p1}, p2: {self.p2}"
+
+    def __iter__(self):
+        self.n = 0
+        return self
+    
+    def __next__(self):
+        if self.n < 2:
+            self.n += 1
+            if self.n == 0:
+                return self.p1
+            else:
+                return self.p2
+        raise StopIteration
+
+
+
+class Triangle:
+    def __init__(self, l1, l2, l3):
+        self.l1 = l1
+        self.l2 = l2
+        self.l3 = l3
 
     def __str__(self) -> str:
-        return f"p1: {self.p1.x, self.p1.y}\np2: {self.p2.x, self.p2.y}\np3: {self.p3.x, self.p3.y}"
+        return f"l1: {self.l1}\nl2: {self.l2}\nl3: {self.l3}"
+
+    def __iter__(self):
+        self.n = 0
+        return self
+    
+    def __next__(self):
+        print(self.n)
+        if self.n <= 2:
+            self.n += 1
+            if self.n == 0:
+                return self.l1
+            elif self.n == 1:
+                return self.l2
+            else:
+                return self.l3
+        raise StopIteration
+
 
 
 #seed point x_0 is just the first of this list
@@ -70,20 +112,28 @@ def sort_for_s(s, target):
     return sorted_s
 
 def render(hull, points, x_k):
+    #print(hull)
+    #print(points)
+    #print(x_k)
     screen=pygame.display.set_mode((width,height))
     screen.fill(screen_color)
     
     for i in points:
-        pygame.draw.circle(screen, dots_color, i, 1)
+        pygame.draw.circle(screen, dots_color, (i.x, i.y), 1)
     
     #pygame.draw.circle(screen, c_color, points[-1], calc_dist(points[-1], points[0]))
-    pygame.draw.circle(screen, dot_color, points[0], 2)
-    pygame.draw.circle(screen, dot_color, points[1], 2)
-    pygame.draw.circle(screen, dot_color, x_k, 2)
+    pygame.draw.circle(screen, dot_color, (points[0].x, points[0].y) , 2)
+    pygame.draw.circle(screen, dot_color, (points[1].x, points[1].y), 2)
+    pygame.draw.circle(screen, dot_color, (x_k.x, x_k.y), 2)
 
     for tri in hull:
         for line in tri:
-            pygame.draw.lines(screen, dot_color, line, line)
+            points = [
+                (line.p1.x, line.p1.y),
+                (line.p2.x, line.p2.y)
+            ]
+            print("one")
+            pygame.draw.lines(screen, dot_color, points=points, closed=points)
 
     pygame.display.flip()
     
@@ -112,14 +162,15 @@ def calc_circum_circle_centre(a, b, c):
         pass
 
 def ccw(p1, p2, p3):
-    return (p3[1]-p1[1]) * (p2[0]-p1[0]) > (p2[1]-p1[1]) * (p3[0]-p1[0])
+    return (p3.y-p1.y) * (p2.x-p1.x) > (p2.y-p1.y) * (p3.x-p1.x)
 
 def check_line_intersect(line_1, line_2):
     try:
-        return ccw(line_1[0], line_2[0], line_2[1]) != ccw(line_1[1], line_2[0], line_2[1]) and ccw(line_1[0], line_1[1], line_2[0]) != ccw(line_1[0], line_1[1], line_2[1])
+        return ccw(line_1.p1, line_2.p1, line_2.p2) != ccw(line_1.p2, line_2.p1, line_2.p2) and ccw(line_1.p1, line_1.p2, line_2.p1) != ccw(line_1.p1, line_1.p2, line_2.p2)
     except:
         #co-linear
         return False
+
 def main():
     lines = []
     x = rand_points(100)
@@ -135,7 +186,6 @@ def main():
             pass
     c = calc_circum_circle_centre(x_0, x_j, x_k)
     #x.append(c)
-    hull = [ [ (x_0, x_j), (x_j, x_k), (x_k, x_0)] ]
 
     # CONVERT ALL TUPLE IN ARRAY TO POINTS
     x_0 = Point(x_0[0], x_0[1])
@@ -148,30 +198,27 @@ def main():
 
 
     c = Point(c[0], c[1])
-    print(c)
-    seed_hull = Triangle(x_0, x_j, x_k)
+    #print(c)
+    l1 = Line(x_0, x_j)
+    l2 = Line(x_j, x_k)
+    l3 = Line(x_k, x_0)
+    seed_hull = Triangle(l1, l2, l3)
     print(seed_hull)
+
+    hull = [seed_hull]
 
     s = []
     for point in x[2:]:        
         if point != x_k:            
             s.append(point)
-    print(s)
     s = sort_for_s(s, c)
 
     for point in s:
         #calculate facets to this point in the hull
         facets = []
-
-        for i in range(len(hull)):
-            for j in range(0,3):
-                p = hull[i][j][0]
-                for tri in hull:
-                    for line in tri:
-                        if not check_line_intersect(line, (p, point)):
-                            hull.append()
-                
-    
+        
+        
+                    
     
     render(hull, x, x_k)
 
